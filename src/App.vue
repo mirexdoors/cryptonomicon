@@ -144,7 +144,6 @@
           {{ sel.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          {{ normalizeGraph() }}
           <div
             v-for="(bar, idx) in normalizeGraph()"
             :key="idx"
@@ -207,7 +206,7 @@ export default {
       this.tickers.push(currentTicker);
       setInterval(async () => {
         const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=e43a2b16cbbf0f742c88389218e785ac4a952e1fa2710b37fd3ffe1c0757cf06`
+          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=ce3fd966e7a1d10d65f907b20bf000552158fd3ed1bd614110baa0ac6cb57a7e`
         );
         const data = await f.json();
 
@@ -217,7 +216,6 @@ export default {
 
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(data.USD);
-          console.log(this.graph);
         }
       }, 5000);
       this.ticker = "";
@@ -242,5 +240,3 @@ export default {
   },
 };
 </script>
-
-<style src="./app.css"></style>
