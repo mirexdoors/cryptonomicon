@@ -144,7 +144,7 @@
           {{ sel.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-			{{ normalizeGraph() }}
+          {{ normalizeGraph() }}
           <div
             v-for="(bar, idx) in normalizeGraph()"
             :key="idx"
@@ -217,9 +217,8 @@ export default {
 
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(data.USD);
-			console.log(this.graph)
+          console.log(this.graph);
         }
-
       }, 5000);
       this.ticker = "";
     },
