@@ -1,7 +1,43 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
+    <div
+      v-if="isPreloader"
+      class="
+        fixed
+        w-100
+        h-100
+        opacity-80
+        bg-purple-800
+        inset-0
+        z-50
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+
     <div class="container">
-      <div class="w-full my-4"></div>
       <section>
         <div class="flex">
           <div class="max-w-xs">
@@ -28,7 +64,36 @@
                   rounded-md
                 "
                 placeholder="Например DOGE"
+                @input="isSuggestionError = false"
               />
+            </div>
+
+            <div
+              v-if="suggestions.length"
+              class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
+            >
+              <span
+                v-for="suggestion in suggestions"
+                :key="suggestion.Id"
+                class="
+                  inline-flex
+                  items-center
+                  px-2
+                  m-1
+                  rounded-md
+                  text-xs
+                  font-medium
+                  bg-gray-300
+                  text-gray-800
+                  cursor-pointer
+                "
+                @click="selectSuggestion(suggestion)"
+              >
+                {{ suggestion.Symbol }}
+              </span>
+            </div>
+            <div v-if="isSuggestionError" class="text-sm text-red-600">
+              Такой тикер уже добавлен
             </div>
           </div>
         </div>
@@ -132,7 +197,7 @@
                   fill-rule="evenodd"
                   d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
                   clip-rule="evenodd"
-                ></path></svg
+                /></svg
               >Удалить
             </button>
           </div>
@@ -158,8 +223,6 @@
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            xmlns:svgjs="http://svgjs.com/svgjs"
             version="1.1"
             width="30"
             height="30"
@@ -189,13 +252,48 @@ export default {
 
   data() {
     return {
+      isPreloader: true,
+      isSuggestionError: false,
       ticker: "",
       tickers: [],
       sel: null,
       graph: [],
+      coins: [],
     };
   },
 
+  async created() {
+    const COINS_API =
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true";
+
+    try {
+      const resp = await fetch(COINS_API);
+      if (resp.ok) {
+        const coinsResponse = await resp.json();
+        this.coins = coinsResponse?.Data
+          ? Object.values(coinsResponse.Data)
+          : [];
+
+        this.isPreloader = this.coins.length <= 0;
+      }
+    } catch (e) {
+      new Error(e);
+    }
+  },
+
+  computed: {
+    suggestions() {
+      if (this.coins.length === 0 || this.ticker === "") {
+        return [];
+      }
+
+      return this.coins
+        .filter((coin) =>
+          coin.Symbol.toLowerCase().includes(this.ticker.toLowerCase())
+        )
+        .slice(0, 4);
+    },
+  },
   methods: {
     add() {
       const currentTicker = {
@@ -204,6 +302,7 @@ export default {
       };
 
       this.tickers.push(currentTicker);
+
       setInterval(async () => {
         const f = await fetch(
           `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=ce3fd966e7a1d10d65f907b20bf000552158fd3ed1bd614110baa0ac6cb57a7e`
@@ -236,6 +335,15 @@ export default {
       return this.graph.map(
         (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
       );
+    },
+
+    selectSuggestion(coin) {
+      if (this.tickers.some((ticker) => ticker.name === coin.Symbol)) {
+        this.isSuggestionError = true;
+        return false;
+      }
+      this.ticker = coin.Symbol;
+      return this.add();
     },
   },
 };
