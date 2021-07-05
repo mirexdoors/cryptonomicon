@@ -57,9 +57,7 @@
                   pr-10
                   border-gray-300
                   text-gray-900
-                  focus:outline-none
-                  focus:ring-gray-500
-                  focus:border-gray-500
+                  focus:outline-none focus:ring-gray-500 focus:border-gray-500
                   sm:text-sm
                   rounded-md
                 "
@@ -118,7 +116,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
         >
           <!-- Heroicon name: solid/mail -->
@@ -159,7 +159,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
           v-if="page > 1"
           @click="page = page - 1"
@@ -186,7 +188,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
           @click="page = page + 1"
           v-if="hasNextPage"
@@ -198,7 +202,7 @@
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in filteredTickers()"
+            v-for="t in paginatedTickers"
             :key="t.name"
             @click="select(t)"
             :class="{
@@ -235,9 +239,7 @@
                 py-4
                 sm:px-6
                 text-md text-gray-500
-                hover:text-gray-600
-                hover:bg-gray-200
-                hover:opacity-20
+                hover:text-gray-600 hover:bg-gray-200 hover:opacity-20
                 transition-all
                 focus:outline-none
               "
@@ -266,7 +268,7 @@
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, idx) in normalizeGraph()"
+            v-for="(bar, idx) in normalizedGraph"
             :key="idx"
             :style="{ height: `${bar}%` }"
             class="bg-purple-800 border w-10"
@@ -317,7 +319,6 @@ export default {
       sel: null,
       graph: [],
       coins: [],
-      hasNextPage: false,
     };
   },
 
@@ -371,6 +372,41 @@ export default {
         )
         .slice(0, 4);
     },
+
+    startIndex() {
+      return (this.page - 1) * 6;
+    },
+
+    endIndex() {
+      return this.page * 6;
+    },
+
+    filteredTickers() {
+      return this.tickers.filter((ticker) =>
+          ticker.name.includes(this.filter)
+      );
+    },
+
+    paginatedTickers() {
+      return this.filteredTickers.slice(this.startIndex, this.endIndex);
+    },
+
+    hasNextPage() {
+      return this.filteredTickers.length > this.endIndex;
+    },
+
+    normalizedGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+
+      if (maxValue === minValue) {
+        return this.graph.map(() => 50);
+      }
+
+      return this.graph.map(
+        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+      );
+    },
   },
 
   watch: {
@@ -392,19 +428,6 @@ export default {
   },
 
   methods: {
-    filteredTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-
-      const filteredTickers = this.tickers.filter((ticker) =>
-        ticker.name.includes(this.filter)
-      );
-
-      this.hasNextPage = filteredTickers.length > end;
-
-      return filteredTickers.slice(start, end);
-    },
-
     add() {
       const currentTicker = {
         name: this.ticker,
@@ -427,7 +450,7 @@ export default {
 
         // currentTicker.price =  data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
         this.tickers.find((t) => t.name === tickerName).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+          data.USD > 1 ? data.USD.toFixed(2) : data.USD?.toPrecision(2);
 
         if (this.sel?.name === tickerName) {
           this.graph.push(data.USD);
@@ -441,14 +464,6 @@ export default {
 
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
-    },
-
-    normalizeGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-      return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
-      );
     },
 
     selectSuggestion(coin) {
