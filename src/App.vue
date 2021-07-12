@@ -57,7 +57,9 @@
                   pr-10
                   border-gray-300
                   text-gray-900
-                  focus:outline-none focus:ring-gray-500 focus:border-gray-500
+                  focus:outline-none
+                  focus:ring-gray-500
+                  focus:border-gray-500
                   sm:text-sm
                   rounded-md
                 "
@@ -116,9 +118,7 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2
-            focus:ring-offset-2
-            focus:ring-gray-500
+            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
           "
         >
           <!-- Heroicon name: solid/mail -->
@@ -159,9 +159,7 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2
-            focus:ring-offset-2
-            focus:ring-gray-500
+            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
           "
           v-if="page > 1"
           @click="page = page - 1"
@@ -188,9 +186,7 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2
-            focus:ring-offset-2
-            focus:ring-gray-500
+            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
           "
           @click="page = page + 1"
           v-if="hasNextPage"
@@ -239,7 +235,9 @@
                 py-4
                 sm:px-6
                 text-md text-gray-500
-                hover:text-gray-600 hover:bg-gray-200 hover:opacity-20
+                hover:text-gray-600
+                hover:bg-gray-200
+                hover:opacity-20
                 transition-all
                 focus:outline-none
               "
@@ -306,7 +304,8 @@
 </template>
 
 <script>
-import {COINS_API, loadTickers} from "@/api";
+import { COINS_API } from "@/api";
+import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 
 export default {
   name: "App",
@@ -342,6 +341,11 @@ export default {
 
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((ticker) => {
+        subscribeToTicker(ticker, (newPrice) => {
+          this.updateTicker(ticker.name, newPrice);
+        });
+      });
     }
 
     setInterval(this.updateTickers, 5000);
@@ -444,6 +448,12 @@ export default {
   },
 
   methods: {
+    updateTicker(tickerName, price) {
+      this.tickers
+        .filter((t) => t.name === tickerName)
+        .forEach((t) => (t.price = price));
+    },
+
     add() {
       const currentTicker = {
         name: this.ticker,
@@ -452,9 +462,9 @@ export default {
 
       this.tickers = [...this.tickers, currentTicker];
       this.filter = "";
-
-      this.updateTickers(currentTicker.name);
-      this.ticker = "";
+      subscribeToTicker(currentTicker.name, (newPrice) => {
+        this.updateTicker(currentTicker.name, newPrice);
+      });
     },
 
     formatPrice(price) {
@@ -466,15 +476,14 @@ export default {
     },
 
     async updateTickers() {
-      if (!this.tickers.length) {
-        return;
-      }
-      const exchangeData = await loadTickers(this.tickers.map((t) => t.name));
-
-      this.tickers.forEach((ticker) => {
-        const price = exchangeData[ticker.name.toUpperCase()];
-        ticker.price = price ?? "-";
-      });
+      // if (!this.tickers.length) {
+      //   return;
+      // }
+      //
+      // this.tickers.forEach((ticker) => {
+      //   const price = exchangeData[ticker.name.toUpperCase()];
+      //   ticker.price = price ?? "-";
+      // });
     },
     select(ticker) {
       this.selectedTicker = ticker;
@@ -486,6 +495,8 @@ export default {
       if (this.selectedTicker === tickerToRemove) {
         this.selectedTicker = null;
       }
+
+      unsubscribeFromTicker(tickerToRemove.name);
     },
 
     selectSuggestion(coin) {
