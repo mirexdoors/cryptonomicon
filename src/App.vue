@@ -57,9 +57,7 @@
                   pr-10
                   border-gray-300
                   text-gray-900
-                  focus:outline-none
-                  focus:ring-gray-500
-                  focus:border-gray-500
+                  focus:outline-none focus:ring-gray-500 focus:border-gray-500
                   sm:text-sm
                   rounded-md
                 "
@@ -118,7 +116,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
         >
           <!-- Heroicon name: solid/mail -->
@@ -159,7 +159,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
           v-if="page > 1"
           @click="page = page - 1"
@@ -186,7 +188,9 @@
             transition-colors
             duration-300
             focus:outline-none
-            focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            focus:ring-2
+            focus:ring-offset-2
+            focus:ring-gray-500
           "
           @click="page = page + 1"
           v-if="hasNextPage"
@@ -235,9 +239,7 @@
                 py-4
                 sm:px-6
                 text-md text-gray-500
-                hover:text-gray-600
-                hover:bg-gray-200
-                hover:opacity-20
+                hover:text-gray-600 hover:bg-gray-200 hover:opacity-20
                 transition-all
                 focus:outline-none
               "
@@ -451,7 +453,12 @@ export default {
     updateTicker(tickerName, price) {
       this.tickers
         .filter((t) => t.name === tickerName)
-        .forEach((t) => (t.price = price));
+        .forEach((t) => {
+          if (t === this.selectedTicker) {
+            this.graph.push(t.price);
+          }
+          t.price = price;
+        });
     },
 
     add() {
@@ -475,16 +482,6 @@ export default {
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
     },
 
-    async updateTickers() {
-      // if (!this.tickers.length) {
-      //   return;
-      // }
-      //
-      // this.tickers.forEach((ticker) => {
-      //   const price = exchangeData[ticker.name.toUpperCase()];
-      //   ticker.price = price ?? "-";
-      // });
-    },
     select(ticker) {
       this.selectedTicker = ticker;
     },
