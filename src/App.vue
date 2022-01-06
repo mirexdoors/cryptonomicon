@@ -209,7 +209,6 @@
               'border-4': selectedTicker === t,
             }"
             class="
-              bg-white
               overflow-hidden
               shadow
               rounded-lg
@@ -217,7 +216,13 @@
               cursor-pointer
             "
           >
-            <div class="px-4 py-5 sm:p-6 text-center">
+            <div
+              :class="{
+                'bg-red-100': t.price === '-',
+                'bg-white': t.price > 0,
+              }"
+              class="px-4 py-5 sm:p-6 text-center"
+            >
               <dt class="text-sm font-medium text-gray-500 truncate">
                 {{ t.name }} - USD
               </dt>
@@ -344,13 +349,13 @@ export default {
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
       this.tickers.forEach((ticker) => {
-        subscribeToTicker(ticker, (newPrice) => {
+        subscribeToTicker(ticker.name, (newPrice) => {
           this.updateTicker(ticker.name, newPrice);
         });
       });
     }
 
-    setInterval(this.updateTickers, 5000);
+    setInterval(this.updateTicker, 5000);
 
     try {
       const resp = await fetch(COINS_API);
@@ -436,8 +441,10 @@ export default {
       }
     },
 
-    filter() {
-      this.page = 1;
+    filter(val) {
+      if (val) {
+        this.page = 1;
+      }
     },
 
     pageStateOptions(v) {
@@ -462,6 +469,14 @@ export default {
     },
 
     add() {
+      if (
+        this.tickers.some(
+          (ticker) => ticker.name.toLowerCase() === this.ticker.toLowerCase()
+        )
+      ) {
+        return (this.isSuggestionError = true);
+      }
+
       const currentTicker = {
         name: this.ticker,
         price: "-",
