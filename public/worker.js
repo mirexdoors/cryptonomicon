@@ -46,7 +46,6 @@ const sendToWebSocket = (message) => {
 };
 
 const subscribeToTickerOnWs = (ticker) => {
-  console.log(2, ticker)
   sendToWebSocket({
     action: "SubAdd",
     subs: [`5~CCCAGG~${ticker}~USD`],
